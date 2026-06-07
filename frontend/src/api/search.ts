@@ -15,6 +15,8 @@ export interface SearchResult {
   active_service_types: string[];
   availability_days: number[];
   distance_km: number | null;
+  lat: number | null;
+  lng: number | null;
 }
 
 export interface SearchResponse {

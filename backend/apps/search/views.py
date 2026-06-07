@@ -88,25 +88,29 @@ class CleanerSearchView(APIView):
         radius_km = float(request.query_params.get("radius", 30))
 
         # Build a map of cleaner_user_id → (lat, lng) from their default addresses
-        if user_lat and user_lng:
-            from apps.profiles.models import Address
-            user_ids = [p.user_id for p in profiles]
-            addr_map: dict[int, tuple] = {}
-            for addr in Address.objects.filter(user_id__in=user_ids, is_default=True).only("user_id", "latitude", "longitude"):
-                if addr.latitude and addr.longitude:
-                    addr_map[addr.user_id] = (addr.latitude, addr.longitude)
+        # Always fetch coords — needed for map markers even without a radius filter
+        from apps.profiles.models import Address
+        user_ids = [p.user_id for p in profiles]
+        addr_map: dict[int, tuple] = {}
+        for addr in Address.objects.filter(
+            user_id__in=user_ids, is_default=True
+        ).only("user_id", "latitude", "longitude"):
+            if addr.latitude and addr.longitude:
+                addr_map[addr.user_id] = (float(addr.latitude), float(addr.longitude))
 
+        if user_lat and user_lng:
             filtered = []
             distances: dict[int, float | None] = {}
+            coords_map: dict[int, tuple | None] = {}
             for p in profiles:
                 coords = addr_map.get(p.user_id)
+                coords_map[p.id] = coords
                 if coords:
                     d = haversine_km(user_lat, user_lng, coords[0], coords[1])
                     if d <= radius_km:
                         distances[p.id] = round(d, 1)
                         filtered.append(p)
                 else:
-                    # No address on file — include with unknown distance
                     distances[p.id] = None
                     filtered.append(p)
 
@@ -115,6 +119,9 @@ class CleanerSearchView(APIView):
             profiles = filtered
         else:
             distances: dict[int, float | None] = {p.id: None for p in profiles}
+            coords_map: dict[int, tuple | None] = {
+                p.id: addr_map.get(p.user_id) for p in profiles
+            }
 
         # --- Pagination ---
 
@@ -134,6 +141,9 @@ class CleanerSearchView(APIView):
         for p in page_profiles:
             data = CleanerSearchSerializer(p, context={"request": request}).data
             data["distance_km"] = distances.get(p.id)
+            coords = coords_map.get(p.id)
+            data["lat"] = coords[0] if coords else None
+            data["lng"] = coords[1] if coords else None
             results.append(data)
 
         return Response({
