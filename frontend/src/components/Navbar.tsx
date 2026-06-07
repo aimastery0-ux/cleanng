@@ -2,7 +2,8 @@ import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useAuthStore } from "@/store/auth";
 import { authApi } from "@/api/auth";
 import Button from "./Button";
-import { Menu, X, Bell } from "lucide-react";
+import NotificationBell from "./NotificationBell";
+import { Menu, X } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 
@@ -71,9 +72,7 @@ export default function Navbar() {
           <div className="hidden md:flex items-center gap-3">
             {user ? (
               <>
-                <button className="relative text-grey-mid hover:text-black transition-colors">
-                  <Bell className="h-5 w-5" />
-                </button>
+                <NotificationBell />
                 <span className="text-sm text-grey-mid">{user.first_name}</span>
                 <Button variant="outline" size="sm" onClick={handleLogout}>
                   Log out

@@ -24,6 +24,7 @@ const CustomerBookings = lazy(() => import("@/features/customer/pages/BookingsPa
 const BookingFlowPage = lazy(() => import("@/features/customer/pages/BookingFlowPage"));
 const BookingDetailPage = lazy(() => import("@/features/customer/pages/BookingDetailPage"));
 const PaymentPage = lazy(() => import("@/features/customer/pages/PaymentPage"));
+const ChatPage = lazy(() => import("@/features/chat/ChatPage"));
 
 // Cleaner pages
 const CleanerOnboarding = lazy(() => import("@/features/cleaner/pages/OnboardingPage"));
@@ -79,6 +80,12 @@ export default function App() {
           <Route
             path="/pay/:bookingId"
             element={<AuthGuard allowedRoles={["CUSTOMER"]}><Layout><PaymentPage /></Layout></AuthGuard>}
+          />
+
+          {/* Chat — both roles */}
+          <Route
+            path="/chat/:bookingId"
+            element={<AuthGuard><Layout><ChatPage /></Layout></AuthGuard>}
           />
 
           {/* Phone verification (authenticated, any role) */}

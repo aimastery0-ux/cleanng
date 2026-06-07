@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
+import { useParams, Link, useNavigate, useLocation } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { bookingsApi, BookingStatus } from "@/api/bookings";
@@ -247,6 +247,13 @@ export default function BookingDetailPage() {
             Confirm & release
           </Button>
         </div>
+      )}
+
+      {/* Message cleaner */}
+      {["ACCEPTED", "IN_PROGRESS", "COMPLETED"].includes(booking.status) && (
+        <Button variant="outline" onClick={() => navigate(`/chat/${bookingId}`)}>
+          Message cleaner
+        </Button>
       )}
 
       {booking.can_cancel && (

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { bookingsApi, Booking, BookingStatus } from "@/api/bookings";
 import Badge from "@/components/Badge";
@@ -25,6 +26,7 @@ function statusVariant(s: BookingStatus) {
 
 function CleanerBookingCard({ booking }: { booking: Booking }) {
   const qc = useQueryClient();
+  const navigate = useNavigate();
   const [declineOpen, setDeclineOpen] = useState(false);
   const [declineReason, setDeclineReason] = useState("");
 
@@ -107,6 +109,11 @@ function CleanerBookingCard({ booking }: { booking: Booking }) {
             {booking.status === "IN_PROGRESS" && (
               <Button size="sm" loading={completeMutation.isPending} onClick={() => completeMutation.mutate()}>
                 Mark as complete
+              </Button>
+            )}
+            {["ACCEPTED", "IN_PROGRESS", "COMPLETED"].includes(booking.status) && (
+              <Button variant="outline" size="sm" onClick={() => navigate(`/chat/${booking.id}`)}>
+                Message
               </Button>
             )}
           </div>
