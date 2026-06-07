@@ -40,6 +40,18 @@ export const authApi = {
   verifyOtp: (phone: string, code: string) =>
     apiClient.post("/auth/verify-otp/", { phone, code }),
 
+  sendOtp: (phone: string) =>
+    apiClient.post("/auth/send-otp/", { phone }).then((r) => r.data),
+
+  verifyOtp: (phone: string, code: string) =>
+    apiClient.post("/auth/verify-otp/", { phone, code }).then((r) => r.data),
+
+  resendVerification: () =>
+    apiClient.post("/auth/resend-verification/").then((r) => r.data),
+
+  googleAuth: (id_token: string, role?: string) =>
+    apiClient.post<AuthResponse>("/auth/google/", { id_token, role }).then((r) => r.data),
+
   healthCheck: () =>
     apiClient.get("/auth/health/").then((r) => r.data),
 };

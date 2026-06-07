@@ -8,6 +8,7 @@ import { authApi } from "@/api/auth";
 import { useAuthStore } from "@/store/auth";
 import Button from "@/components/Button";
 import Input from "@/components/Input";
+import GoogleAuthButton from "@/components/GoogleAuthButton";
 
 const schema = z.object({
   first_name: z.string().min(1, "First name is required"),
@@ -40,7 +41,8 @@ export default function RegisterPage() {
     onSuccess: (data) => {
       setAuth(data.user, data.tokens.access, data.tokens.refresh);
       toast.success("Account created!");
-      navigate(role === "CLEANER" ? "/cleaner/onboarding" : "/customer", { replace: true });
+      // Send OTP if phone provided, then go to verification
+      navigate("/verify-phone", { replace: true });
     },
     onError: (err: any) => {
       const msg = err?.response?.data?.email?.[0] || err?.response?.data?.detail || "Registration failed.";
@@ -126,6 +128,14 @@ export default function RegisterPage() {
               Create account
             </Button>
           </form>
+
+          <div className="my-6 flex items-center gap-4">
+            <div className="flex-1 h-px bg-border" />
+            <span className="text-caption text-grey-light">or</span>
+            <div className="flex-1 h-px bg-border" />
+          </div>
+
+          <GoogleAuthButton role={role} />
 
           <p className="mt-6 text-center text-small text-grey-mid">
             Already have an account?{" "}

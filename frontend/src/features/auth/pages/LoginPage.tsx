@@ -8,6 +8,7 @@ import { authApi } from "@/api/auth";
 import { useAuthStore } from "@/store/auth";
 import Button from "@/components/Button";
 import Input from "@/components/Input";
+import GoogleAuthButton from "@/components/GoogleAuthButton";
 
 const schema = z.object({
   email: z.string().email("Enter a valid email"),
@@ -70,10 +71,24 @@ export default function LoginPage() {
               {...register("password")}
             />
 
+            <div className="flex justify-end">
+              <Link to="/forgot-password" className="text-small text-orange hover:underline">
+                Forgot password?
+              </Link>
+            </div>
+
             <Button type="submit" fullWidth loading={loginMutation.isPending}>
               Log in
             </Button>
           </form>
+
+          <div className="my-6 flex items-center gap-4">
+            <div className="flex-1 h-px bg-border" />
+            <span className="text-caption text-grey-light">or</span>
+            <div className="flex-1 h-px bg-border" />
+          </div>
+
+          <GoogleAuthButton />
 
           <p className="mt-6 text-center text-small text-grey-mid">
             Don't have an account?{" "}

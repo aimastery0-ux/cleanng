@@ -73,6 +73,10 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
     new_password = serializers.CharField(min_length=8)
 
 
+class EmailVerifySerializer(serializers.Serializer):
+    token = serializers.CharField()
+
+
 class SendOTPSerializer(serializers.Serializer):
     phone = serializers.CharField(max_length=20)
 
