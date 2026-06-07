@@ -4,16 +4,20 @@ from apps.profiles.models import CleanerProfile
 
 class Service(models.Model):
     class ServiceType(models.TextChoices):
-        REGULAR = "REGULAR", "Regular Cleaning"
-        DEEP = "DEEP", "Deep Cleaning"
-        POST_CONSTRUCTION = "POST_CONSTRUCTION", "Post-Construction"
-        OFFICE = "OFFICE", "Office Cleaning"
+        HOME_CLEANING = "HOME_CLEANING", "Home Cleaning"
+        DEEP_CLEANING = "DEEP_CLEANING", "Deep Cleaning"
+        OFFICE_CLEANING = "OFFICE_CLEANING", "Office Cleaning"
         MOVE_IN_OUT = "MOVE_IN_OUT", "Move In/Out Cleaning"
+        POST_CONSTRUCTION = "POST_CONSTRUCTION", "Post-Construction"
+        CARPET_CLEANING = "CARPET_CLEANING", "Carpet Cleaning"
+        WINDOW_CLEANING = "WINDOW_CLEANING", "Window Cleaning"
+        LAUNDRY = "LAUNDRY", "Laundry"
 
     class PricingUnit(models.TextChoices):
         PER_HOUR = "PER_HOUR", "Per Hour"
-        FLAT = "FLAT", "Flat Rate"
+        PER_JOB = "PER_JOB", "Per Job"
         PER_ROOM = "PER_ROOM", "Per Room"
+        PER_SQFT = "PER_SQFT", "Per Sq. Ft."
 
     cleaner = models.ForeignKey(CleanerProfile, on_delete=models.CASCADE, related_name="services")
     type = models.CharField(max_length=20, choices=ServiceType.choices)

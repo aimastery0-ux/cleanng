@@ -1,9 +1,36 @@
 import apiClient from "./client";
 
+export interface AvailabilitySlot {
+  id: number;
+  day_of_week: number;
+  day_name: string;
+  start_time: string;
+  end_time: string;
+}
+
+export interface ServiceSummary {
+  id: number;
+  type: string;
+  title: string;
+  price: string;
+  pricing_unit: string;
+  is_active: boolean;
+}
+
+export interface ReviewSummary {
+  author_name: string;
+  rating: number;
+  comment: string;
+  created_at: string;
+}
+
 export interface CleanerProfile {
   id: number;
   email: string;
+  first_name: string;
+  last_name: string;
   full_name: string;
+  phone: string;
   avatar_url: string;
   bio: string;
   years_experience: number;
@@ -11,10 +38,26 @@ export interface CleanerProfile {
   base_hourly_rate: string;
   is_verified: boolean;
   verification_status: "PENDING" | "APPROVED" | "REJECTED";
+  id_doc_url: string;
   portfolio_images: string[];
   rating_avg: string;
   rating_count: number;
   is_featured: boolean;
+  services: ServiceSummary[];
+  availability: AvailabilitySlot[];
+  recent_reviews: ReviewSummary[];
+  created_at: string;
+}
+
+export interface CleanerStats {
+  total_bookings: number;
+  completed_bookings: number;
+  pending_bookings: number;
+  total_earned: string;
+  rating_avg: string;
+  rating_count: number;
+  this_month_bookings: number;
+  this_month_earned: string;
 }
 
 export interface OnboardingStatus {
@@ -73,4 +116,28 @@ export const profilesApi = {
 
   createAddress: (data: Omit<Address, "id">) =>
     apiClient.post<Address>("/profiles/addresses/", data).then((r) => r.data),
+
+  updateProfile: (data: Partial<Pick<CleanerProfile, "bio" | "years_experience" | "service_areas" | "base_hourly_rate" | "portfolio_images">>) =>
+    apiClient.patch<CleanerProfile>("/profiles/cleaner/", data).then((r) => r.data),
+
+  uploadAvatar: (avatar_url: string) =>
+    apiClient.post<{ avatar_url: string }>("/profiles/cleaner/avatar/", { avatar_url }).then((r) => r.data),
+
+  addPortfolioImage: (image_url: string) =>
+    apiClient.post<{ portfolio_images: string[] }>("/profiles/cleaner/portfolio/add/", { image_url }).then((r) => r.data),
+
+  removePortfolioImage: (image_url: string) =>
+    apiClient.post<{ portfolio_images: string[] }>("/profiles/cleaner/portfolio/remove/", { image_url }).then((r) => r.data),
+
+  getStats: () =>
+    apiClient.get<CleanerStats>("/profiles/cleaner/stats/").then((r) => r.data),
+
+  getAvailability: () =>
+    apiClient.get<AvailabilitySlot[]>("/profiles/availability/").then((r) => r.data),
+
+  bulkSetAvailability: (slots: Array<{ day_of_week: number; start_time: string; end_time: string }>) =>
+    apiClient.put<AvailabilitySlot[]>("/profiles/availability/bulk/", { slots }).then((r) => r.data),
+
+  deleteAvailabilitySlot: (id: number) =>
+    apiClient.delete(`/profiles/availability/${id}/`),
 };

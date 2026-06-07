@@ -27,6 +27,8 @@ const CleanerOnboarding = lazy(() => import("@/features/cleaner/pages/Onboarding
 const CleanerDashboard = lazy(() => import("@/features/cleaner/pages/DashboardPage"));
 const CleanerProfile = lazy(() => import("@/features/cleaner/pages/ProfilePage"));
 const CleanerBookings = lazy(() => import("@/features/cleaner/pages/BookingsPage"));
+const CleanerServices = lazy(() => import("@/features/cleaner/pages/ServicesPage"));
+const CleanerAvailability = lazy(() => import("@/features/cleaner/pages/AvailabilityPage"));
 
 // Admin pages
 const AdminDashboard = lazy(() => import("@/features/admin/pages/DashboardPage"));
@@ -100,6 +102,14 @@ export default function App() {
           <Route
             path="/cleaner/bookings"
             element={<AuthGuard allowedRoles={["CLEANER"]}><Layout><CleanerBookings /></Layout></AuthGuard>}
+          />
+          <Route
+            path="/cleaner/services"
+            element={<AuthGuard allowedRoles={["CLEANER"]}><Layout><CleanerServices /></Layout></AuthGuard>}
+          />
+          <Route
+            path="/cleaner/availability"
+            element={<AuthGuard allowedRoles={["CLEANER"]}><Layout><CleanerAvailability /></Layout></AuthGuard>}
           />
 
           {/* Admin */}
