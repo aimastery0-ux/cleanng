@@ -1,0 +1,73 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    font-family: "DM Sans", sans-serif;
+    color: #444444;
+    background-color: #ffffff;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    color: #1D1D1D;
+  }
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-pill px-6 py-3 text-sm font-semibold transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-primary {
+    @apply btn bg-orange text-white hover:bg-orange-dark hover:-translate-y-px active:translate-y-0;
+  }
+
+  .btn-secondary {
+    @apply btn bg-black text-white hover:bg-grey-dark hover:-translate-y-px;
+  }
+
+  .btn-outline {
+    @apply btn border-[1.5px] border-black bg-transparent text-black hover:bg-black hover:text-white;
+  }
+
+  .btn-ghost {
+    @apply btn bg-orange-light text-orange hover:bg-orange hover:text-white;
+  }
+
+  .input {
+    @apply w-full rounded-input border-[1.5px] border-border px-4 py-3 text-sm text-black placeholder:text-grey-light focus:outline-none focus:border-orange focus:shadow-input-focus transition-all duration-150;
+  }
+
+  .card {
+    @apply bg-white rounded-card border border-border;
+  }
+
+  .badge {
+    @apply inline-flex items-center px-3 py-1 rounded-pill text-caption font-medium;
+  }
+
+  .badge-orange {
+    @apply badge bg-orange-light text-orange;
+  }
+
+  .badge-success {
+    @apply badge bg-green-50 text-success;
+  }
+
+  .badge-error {
+    @apply badge bg-red-50 text-error;
+  }
+
+  .badge-dark {
+    @apply badge bg-black text-white;
+  }
+
+  .badge-grey {
+    @apply badge bg-bg-alt text-grey-mid;
+  }
+}
