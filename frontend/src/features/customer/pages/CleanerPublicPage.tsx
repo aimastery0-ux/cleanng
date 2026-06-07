@@ -1,6 +1,8 @@
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
+import toast from "react-hot-toast";
 import { profilesApi, CleanerProfile } from "@/api/profiles";
+import { useAuthStore } from "@/store/auth";
 import Badge from "@/components/Badge";
 import Button from "@/components/Button";
 import Card from "@/components/Card";
@@ -59,6 +61,16 @@ function ProfileSkeleton() {
 export default function CleanerPublicPage() {
   const { id } = useParams<{ id: string }>();
   const cleanerId = parseInt(id ?? "0", 10);
+  const navigate = useNavigate();
+  const user = useAuthStore((s) => s.user);
+
+  const handleBookNow = () => {
+    if (user?.role === "CLEANER") {
+      toast.error("Cleaners cannot make bookings. Switch to a customer account.");
+      return;
+    }
+    navigate(`/book/${cleanerId}`);
+  };
 
   const { data: cleaner, isLoading, isError } = useQuery({
     queryKey: ["public-cleaner", cleanerId],
@@ -126,7 +138,7 @@ export default function CleanerPublicPage() {
         </div>
 
         <div className="shrink-0">
-          <Button size="lg">
+          <Button size="lg" onClick={handleBookNow}>
             Book {cleaner.first_name}
           </Button>
         </div>
@@ -234,7 +246,7 @@ export default function CleanerPublicPage() {
               From ₦{Number(cleaner.base_hourly_rate).toLocaleString()}/hr
             </p>
           </div>
-          <Button size="md">Book now</Button>
+          <Button size="md" onClick={handleBookNow}>Book now</Button>
         </div>
       </div>
     </div>
