@@ -13,6 +13,7 @@ from .serializers import (
     AddressSerializer, AvailabilitySerializer, AvailabilityExceptionSerializer,
     OnboardingStep1Serializer, OnboardingStep2Serializer,
     OnboardingStep3Serializer, OnboardingStep4Serializer,
+    BankDetailsSerializer,
 )
 from apps.accounts.permissions import IsCleaner, IsCustomer
 
@@ -307,3 +308,19 @@ class OnboardingStatusView(APIView):
             "verification_status": profile.verification_status,
             "is_verified": profile.is_verified,
         })
+
+
+class BankDetailsView(APIView):
+    """Get or update the cleaner's bank account for payouts."""
+    permission_classes = [IsCleaner]
+
+    def get(self, request):
+        profile = CleanerProfile.objects.get(user=request.user)
+        return Response(BankDetailsSerializer(profile).data)
+
+    def put(self, request):
+        profile = CleanerProfile.objects.get(user=request.user)
+        serializer = BankDetailsSerializer(profile, data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)

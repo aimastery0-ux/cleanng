@@ -23,6 +23,7 @@ const CustomerDashboard = lazy(() => import("@/features/customer/pages/Dashboard
 const CustomerBookings = lazy(() => import("@/features/customer/pages/BookingsPage"));
 const BookingFlowPage = lazy(() => import("@/features/customer/pages/BookingFlowPage"));
 const BookingDetailPage = lazy(() => import("@/features/customer/pages/BookingDetailPage"));
+const PaymentPage = lazy(() => import("@/features/customer/pages/PaymentPage"));
 
 // Cleaner pages
 const CleanerOnboarding = lazy(() => import("@/features/cleaner/pages/OnboardingPage"));
@@ -72,6 +73,12 @@ export default function App() {
           <Route
             path="/book/:cleanerId"
             element={<AuthGuard allowedRoles={["CUSTOMER"]}><Layout><BookingFlowPage /></Layout></AuthGuard>}
+          />
+
+          {/* Payment page */}
+          <Route
+            path="/pay/:bookingId"
+            element={<AuthGuard allowedRoles={["CUSTOMER"]}><Layout><PaymentPage /></Layout></AuthGuard>}
           />
 
           {/* Phone verification (authenticated, any role) */}

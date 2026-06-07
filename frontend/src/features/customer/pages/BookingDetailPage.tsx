@@ -1,7 +1,8 @@
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { bookingsApi, BookingStatus } from "@/api/bookings";
+import { paymentsApi } from "@/api/payments";
 import Badge from "@/components/Badge";
 import Button from "@/components/Button";
 import Card from "@/components/Card";
@@ -14,19 +15,57 @@ function statusVariant(s: BookingStatus) {
   return map[s] ?? "grey";
 }
 
+function paymentStatusLabel(status: string) {
+  const labels: Record<string, string> = {
+    PENDING: "Payment pending",
+    HELD_IN_ESCROW: "Payment held in escrow",
+    RELEASED: "Payment released to cleaner",
+    REFUNDED: "Refunded",
+    FAILED: "Payment failed",
+  };
+  return labels[status] ?? status;
+}
+
+function paymentStatusVariant(status: string): "orange" | "success" | "error" | "dark" | "grey" {
+  if (status === "HELD_IN_ESCROW") return "orange";
+  if (status === "RELEASED") return "success";
+  if (status === "REFUNDED" || status === "FAILED") return "error";
+  return "grey";
+}
+
 export default function BookingDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const qc = useQueryClient();
+  const bookingId = Number(id);
 
   const { data: booking, isLoading } = useQuery({
-    queryKey: ["booking", Number(id)],
-    queryFn: () => bookingsApi.get(Number(id)),
+    queryKey: ["booking", bookingId],
+    queryFn: () => bookingsApi.get(bookingId),
+  });
+
+  const { data: paymentStatus } = useQuery({
+    queryKey: ["booking-payment", bookingId],
+    queryFn: () => paymentsApi.getForBooking(bookingId),
+    enabled: !!bookingId,
   });
 
   const cancelMutation = useMutation({
-    mutationFn: () => bookingsApi.cancel(Number(id)),
-    onSuccess: () => { toast.success("Booking cancelled."); qc.invalidateQueries({ queryKey: ["booking", Number(id)] }); },
+    mutationFn: () => bookingsApi.cancel(bookingId),
+    onSuccess: () => {
+      toast.success("Booking cancelled.");
+      qc.invalidateQueries({ queryKey: ["booking", bookingId] });
+    },
     onError: (err: any) => toast.error(err?.response?.data?.detail ?? "Cannot cancel."),
+  });
+
+  const confirmMutation = useMutation({
+    mutationFn: () => paymentsApi.confirmCompletion(bookingId),
+    onSuccess: () => {
+      toast.success("Job confirmed! Payout initiated for the cleaner.");
+      qc.invalidateQueries({ queryKey: ["booking-payment", bookingId] });
+    },
+    onError: (err: any) => toast.error(err?.response?.data?.detail ?? "Could not confirm."),
   });
 
   if (isLoading || !booking) {
@@ -39,12 +78,26 @@ export default function BookingDetailPage() {
 
   const total = Number(booking.total_amount);
   const commission = Number(booking.commission_amount);
+  const payment = paymentStatus?.payment;
+
+  const showPayNow =
+    booking.status === "ACCEPTED" &&
+    (!payment || payment.status === "PENDING" || payment.status === "FAILED");
+
+  const showConfirmCompletion =
+    booking.status === "COMPLETED" &&
+    payment?.status === "HELD_IN_ESCROW";
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-10 space-y-6">
       <div className="flex items-center gap-3">
         <Link to="/customer/bookings" className="text-grey-mid hover:text-black text-small">← Bookings</Link>
         <Badge variant={statusVariant(booking.status)}>{booking.status.replace(/_/g, " ")}</Badge>
+        {payment && (
+          <Badge variant={paymentStatusVariant(payment.status)}>
+            {paymentStatusLabel(payment.status)}
+          </Badge>
+        )}
       </div>
 
       <Card padding="lg" className="space-y-4">
@@ -90,7 +143,36 @@ export default function BookingDetailPage() {
         </div>
       </Card>
 
-      {/* Actions */}
+      {/* Payment CTA */}
+      {showPayNow && (
+        <div className="bg-orange/5 border border-orange/30 rounded-card p-4 flex items-center justify-between gap-4">
+          <div>
+            <p className="font-semibold">Payment required</p>
+            <p className="text-small text-grey-mid">Pay now to secure your booking. Funds are held in escrow.</p>
+          </div>
+          <Button onClick={() => navigate(`/pay/${bookingId}`)}>
+            Pay ₦{total.toLocaleString()}
+          </Button>
+        </div>
+      )}
+
+      {/* Confirm completion CTA */}
+      {showConfirmCompletion && (
+        <div className="bg-green-50 border border-green-200 rounded-card p-4 flex items-center justify-between gap-4">
+          <div>
+            <p className="font-semibold">Did the cleaner finish the job?</p>
+            <p className="text-small text-grey-mid">Confirming will release the payment to the cleaner.</p>
+          </div>
+          <Button
+            onClick={() => { if (confirm("Confirm the job is complete and release payment?")) confirmMutation.mutate(); }}
+            loading={confirmMutation.isPending}
+          >
+            Confirm & release
+          </Button>
+        </div>
+      )}
+
+      {/* Cancel */}
       {booking.can_cancel && (
         <Button
           variant="outline"

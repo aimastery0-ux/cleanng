@@ -99,8 +99,8 @@ def release_payout(booking_id: int):
 
     headers = {"Authorization": f"Bearer {settings.FLW_SECRET_KEY}", "Content-Type": "application/json"}
     payload = {
-        "account_bank": booking.cleaner.user.bank_code if hasattr(booking.cleaner.user, "bank_code") else "",
-        "account_number": booking.cleaner.user.account_number if hasattr(booking.cleaner.user, "account_number") else "",
+        "account_bank": booking.cleaner.bank_code,
+        "account_number": booking.cleaner.account_number,
         "amount": float(booking.payout_amount),
         "narration": f"CleanNG payout - Booking #{booking_id}",
         "currency": "NGN",

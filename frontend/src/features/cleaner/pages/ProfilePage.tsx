@@ -5,6 +5,7 @@ import { z } from "zod";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { profilesApi } from "@/api/profiles";
+import { bankApi, BankDetails } from "@/api/payments";
 import Button from "@/components/Button";
 import Input from "@/components/Input";
 import Card from "@/components/Card";
@@ -20,6 +21,14 @@ const schema = z.object({
   years_experience: z.coerce.number().min(0).max(50),
 });
 type FormValues = z.infer<typeof schema>;
+
+const bankSchema = z.object({
+  bank_name: z.string().min(2, "Bank name required"),
+  bank_code: z.string().min(2, "Bank code required"),
+  account_number: z.string().regex(/^\d{10}$/, "Account number must be 10 digits"),
+  account_name: z.string().min(2, "Account name required"),
+});
+type BankFormValues = z.infer<typeof bankSchema>;
 
 async function uploadToCloudinary(file: File): Promise<string> {
   const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
@@ -113,6 +122,37 @@ export default function ProfilePage() {
       setPortfolioUploading(false);
     }
   };
+
+  const { data: bankDetails } = useQuery({
+    queryKey: ["bank-details"],
+    queryFn: bankApi.get,
+  });
+
+  const {
+    register: registerBank,
+    handleSubmit: handleBankSubmit,
+    formState: { errors: bankErrors },
+  } = useForm<BankFormValues>({
+    resolver: zodResolver(bankSchema),
+    values: bankDetails
+      ? {
+          bank_name: bankDetails.bank_name,
+          bank_code: bankDetails.bank_code,
+          account_number: bankDetails.account_number,
+          account_name: bankDetails.account_name,
+        }
+      : undefined,
+  });
+
+  const bankMutation = useMutation({
+    mutationFn: (data: BankFormValues) => bankApi.update(data as BankDetails),
+    onSuccess: () => {
+      toast.success("Bank details saved.");
+      qc.invalidateQueries({ queryKey: ["bank-details"] });
+    },
+    onError: (err: any) =>
+      toast.error(err?.response?.data?.account_number?.[0] ?? "Failed to save bank details."),
+  });
 
   const filteredSuggestions = LAGOS_AREAS.filter(
     (a) =>
@@ -239,6 +279,44 @@ export default function ProfilePage() {
 
           <Button type="submit" loading={updateMutation.isPending}>
             Save changes
+          </Button>
+        </form>
+      </Card>
+
+      {/* Bank details */}
+      <Card padding="md">
+        <h2 className="font-semibold mb-1">Bank account for payouts</h2>
+        <p className="text-small text-grey-mid mb-4">
+          Your earnings are paid out here after customers confirm job completion.
+        </p>
+        <form onSubmit={handleBankSubmit((d) => bankMutation.mutate(d))} className="space-y-4">
+          <Input
+            label="Bank name"
+            placeholder="e.g. First Bank"
+            error={bankErrors.bank_name?.message}
+            {...registerBank("bank_name")}
+          />
+          <Input
+            label="Bank code"
+            placeholder="e.g. 011"
+            error={bankErrors.bank_code?.message}
+            {...registerBank("bank_code")}
+          />
+          <Input
+            label="Account number"
+            placeholder="10-digit NUBAN"
+            maxLength={10}
+            error={bankErrors.account_number?.message}
+            {...registerBank("account_number")}
+          />
+          <Input
+            label="Account name"
+            placeholder="As shown on your bank statement"
+            error={bankErrors.account_name?.message}
+            {...registerBank("account_name")}
+          />
+          <Button type="submit" loading={bankMutation.isPending}>
+            Save bank details
           </Button>
         </form>
       </Card>

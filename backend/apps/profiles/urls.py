@@ -25,6 +25,9 @@ urlpatterns = [
     path("addresses/", views.AddressListCreateView.as_view(), name="address-list"),
     path("addresses/<int:pk>/", views.AddressDetailView.as_view(), name="address-detail"),
 
+    # Bank details (payouts)
+    path("cleaner/bank-details/", views.BankDetailsView.as_view(), name="bank-details"),
+
     # Availability
     path("availability/", views.AvailabilityView.as_view(), name="availability"),
     path("availability/bulk/", views.AvailabilityBulkView.as_view(), name="availability-bulk"),

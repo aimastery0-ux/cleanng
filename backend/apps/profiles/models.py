@@ -26,6 +26,11 @@ class CleanerProfile(models.Model):
     is_featured = models.BooleanField(default=False)
     featured_until = models.DateTimeField(null=True, blank=True)
     rejection_reason = models.TextField(blank=True)
+    # Bank account for payouts
+    bank_name = models.CharField(max_length=100, blank=True)
+    bank_code = models.CharField(max_length=20, blank=True)
+    account_number = models.CharField(max_length=20, blank=True)
+    account_name = models.CharField(max_length=150, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

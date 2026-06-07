@@ -182,3 +182,14 @@ class AddressSerializer(serializers.ModelSerializer):
     class Meta:
         model = Address
         fields = ("id", "label", "line1", "area", "city", "state", "latitude", "longitude", "is_default")
+
+
+class BankDetailsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CleanerProfile
+        fields = ("bank_name", "bank_code", "account_number", "account_name")
+
+    def validate_account_number(self, value):
+        if value and not value.isdigit():
+            raise serializers.ValidationError("Account number must contain only digits.")
+        return value
