@@ -1,11 +1,16 @@
+import { useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { profilesApi, CleanerProfile } from "@/api/profiles";
+import { reviewsApi } from "@/api/reviews";
 import { useAuthStore } from "@/store/auth";
 import Badge from "@/components/Badge";
 import Button from "@/components/Button";
 import Card from "@/components/Card";
+import { StarDisplay } from "@/components/StarPicker";
+
+const PAGE_SIZE = 5;
 
 const DAY_NAMES = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
@@ -27,19 +32,6 @@ const PRICING_UNIT_LABELS: Record<string, string> = {
   PER_SQFT: "/sq.ft",
 };
 
-function StarRating({ rating, count }: { rating: number; count: number }) {
-  const full = Math.round(Number(rating));
-  return (
-    <span className="flex items-center gap-1">
-      {[...Array(5)].map((_, i) => (
-        <span key={i} className={i < full ? "text-orange" : "text-border"}>★</span>
-      ))}
-      <span className="text-small text-grey-mid ml-1">
-        {Number(rating).toFixed(1)} ({count} review{count !== 1 ? "s" : ""})
-      </span>
-    </span>
-  );
-}
 
 function ProfileSkeleton() {
   return (
@@ -63,6 +55,7 @@ export default function CleanerPublicPage() {
   const cleanerId = parseInt(id ?? "0", 10);
   const navigate = useNavigate();
   const user = useAuthStore((s) => s.user);
+  const [reviewsPage, setReviewsPage] = useState(1);
 
   const handleBookNow = () => {
     if (user?.role === "CLEANER") {
@@ -77,6 +70,15 @@ export default function CleanerPublicPage() {
     queryFn: () => profilesApi.getPublicCleanerProfile(cleanerId),
     enabled: !!cleanerId,
   });
+
+  const { data: allReviews = [] } = useQuery({
+    queryKey: ["cleaner-reviews", cleanerId],
+    queryFn: () => reviewsApi.forCleaner(cleanerId),
+    enabled: !!cleanerId,
+  });
+
+  const visibleReviews = allReviews.slice(0, reviewsPage * PAGE_SIZE);
+  const hasMoreReviews = visibleReviews.length < allReviews.length;
 
   if (isLoading) return <ProfileSkeleton />;
 
@@ -122,7 +124,7 @@ export default function CleanerPublicPage() {
 
           {cleaner.rating_count > 0 && (
             <div className="mb-2">
-              <StarRating rating={Number(cleaner.rating_avg)} count={cleaner.rating_count} />
+              <StarDisplay rating={Number(cleaner.rating_avg)} count={cleaner.rating_count} />
             </div>
           )}
 
@@ -214,26 +216,43 @@ export default function CleanerPublicPage() {
       )}
 
       {/* Reviews */}
-      {cleaner.recent_reviews?.length > 0 && (
+      {allReviews.length > 0 && (
         <section>
-          <h2 className="text-h3 font-bold mb-4">Reviews</h2>
+          <h2 className="text-h3 font-bold mb-4">
+            Reviews
+            <span className="text-small font-normal text-grey-mid ml-2">({allReviews.length})</span>
+          </h2>
           <div className="space-y-3">
-            {cleaner.recent_reviews.map((r, i) => (
-              <Card key={i} padding="md">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="font-semibold">{r.author_name}</p>
-                    <p className="text-small text-grey-mid mt-1">{r.comment}</p>
-                  </div>
-                  <div className="flex items-center gap-1 shrink-0">
-                    {[...Array(r.rating)].map((_, j) => (
-                      <span key={j} className="text-orange text-sm">★</span>
-                    ))}
+            {visibleReviews.map((r) => (
+              <Card key={r.id} padding="md">
+                <div className="flex items-start gap-3">
+                  {r.author_avatar ? (
+                    <img src={r.author_avatar} alt="" className="w-9 h-9 rounded-full object-cover shrink-0 border border-border" />
+                  ) : (
+                    <div className="w-9 h-9 rounded-full bg-bg-alt flex items-center justify-center text-sm shrink-0">👤</div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                      <p className="font-semibold text-small">{r.author_name}</p>
+                      <StarDisplay rating={r.rating} />
+                    </div>
+                    {r.comment && <p className="text-small text-grey-dark mt-1">{r.comment}</p>}
+                    <p className="text-caption text-grey-light mt-1">
+                      {new Date(r.created_at).toLocaleDateString("en-NG", { day: "numeric", month: "long", year: "numeric" })}
+                    </p>
                   </div>
                 </div>
               </Card>
             ))}
           </div>
+          {hasMoreReviews && (
+            <button
+              className="mt-4 w-full py-2 text-small text-orange border border-orange/30 rounded-pill hover:bg-orange/5 transition-colors"
+              onClick={() => setReviewsPage((p) => p + 1)}
+            >
+              Show more reviews
+            </button>
+          )}
         </section>
       )}
 

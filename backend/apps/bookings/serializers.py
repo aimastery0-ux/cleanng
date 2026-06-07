@@ -29,6 +29,7 @@ class BookingSerializer(serializers.ModelSerializer):
     status_logs = BookingStatusLogSerializer(many=True, read_only=True)
     can_cancel = serializers.SerializerMethodField()
     can_dispute = serializers.SerializerMethodField()
+    can_review = serializers.SerializerMethodField()
 
     class Meta:
         model = Booking
@@ -42,13 +43,13 @@ class BookingSerializer(serializers.ModelSerializer):
             "status",
             "total_amount", "commission_amount", "payout_amount",
             "notes", "cancellation_reason",
-            "can_cancel", "can_dispute",
+            "can_cancel", "can_dispute", "can_review",
             "status_logs",
             "created_at", "updated_at",
         )
         read_only_fields = (
             "id", "status", "commission_amount", "payout_amount",
-            "can_cancel", "can_dispute", "status_logs",
+            "can_cancel", "can_dispute", "can_review", "status_logs",
             "created_at", "updated_at",
         )
 
@@ -65,6 +66,17 @@ class BookingSerializer(serializers.ModelSerializer):
             Booking.Status.IN_PROGRESS,
             Booking.Status.COMPLETED,
         )
+
+    def get_can_review(self, obj) -> bool:
+        request = self.context.get("request")
+        if not request or not request.user.is_authenticated:
+            return False
+        if obj.status != Booking.Status.COMPLETED:
+            return False
+        if obj.customer != request.user:
+            return False
+        from apps.reviews.models import Review
+        return not Review.objects.filter(booking=obj, author=request.user).exists()
 
 
 class CreateBookingSerializer(serializers.Serializer):

@@ -1,11 +1,14 @@
+import { useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { bookingsApi, BookingStatus } from "@/api/bookings";
 import { paymentsApi } from "@/api/payments";
+import { reviewsApi } from "@/api/reviews";
 import Badge from "@/components/Badge";
 import Button from "@/components/Button";
 import Card from "@/components/Card";
+import StarPicker, { StarDisplay } from "@/components/StarPicker";
 
 function statusVariant(s: BookingStatus) {
   const map: Record<BookingStatus, "orange" | "success" | "error" | "dark" | "grey"> = {
@@ -15,22 +18,98 @@ function statusVariant(s: BookingStatus) {
   return map[s] ?? "grey";
 }
 
-function paymentStatusLabel(status: string) {
+function paymentStatusLabel(s: string) {
   const labels: Record<string, string> = {
     PENDING: "Payment pending",
     HELD_IN_ESCROW: "Payment held in escrow",
-    RELEASED: "Payment released to cleaner",
+    RELEASED: "Payment released",
     REFUNDED: "Refunded",
     FAILED: "Payment failed",
   };
-  return labels[status] ?? status;
+  return labels[s] ?? s;
 }
 
-function paymentStatusVariant(status: string): "orange" | "success" | "error" | "dark" | "grey" {
-  if (status === "HELD_IN_ESCROW") return "orange";
-  if (status === "RELEASED") return "success";
-  if (status === "REFUNDED" || status === "FAILED") return "error";
+function paymentStatusVariant(s: string): "orange" | "success" | "error" | "dark" | "grey" {
+  if (s === "HELD_IN_ESCROW") return "orange";
+  if (s === "RELEASED") return "success";
+  if (s === "REFUNDED" || s === "FAILED") return "error";
   return "grey";
+}
+
+function ReviewSection({ bookingId }: { bookingId: number }) {
+  const qc = useQueryClient();
+  const [rating, setRating] = useState(0);
+  const [comment, setComment] = useState("");
+
+  const { data: reviewStatus } = useQuery({
+    queryKey: ["booking-review", bookingId],
+    queryFn: () => reviewsApi.forBooking(bookingId),
+  });
+
+  const submitMutation = useMutation({
+    mutationFn: () => reviewsApi.create(bookingId, rating, comment),
+    onSuccess: () => {
+      toast.success("Review submitted. Thank you!");
+      qc.invalidateQueries({ queryKey: ["booking-review", bookingId] });
+      qc.invalidateQueries({ queryKey: ["booking", bookingId] });
+    },
+    onError: (err: any) => toast.error(err?.response?.data?.booking_id?.[0] ?? "Could not submit review."),
+  });
+
+  if (!reviewStatus) return null;
+
+  if (reviewStatus.review) {
+    return (
+      <Card padding="md">
+        <h3 className="font-semibold mb-3">Your review</h3>
+        <StarDisplay rating={reviewStatus.review.rating} />
+        {reviewStatus.review.comment && (
+          <p className="text-small text-grey-dark mt-2">{reviewStatus.review.comment}</p>
+        )}
+        <p className="text-caption text-grey-light mt-1">
+          {new Date(reviewStatus.review.created_at).toLocaleDateString("en-NG", {
+            day: "numeric", month: "long", year: "numeric",
+          })}
+        </p>
+      </Card>
+    );
+  }
+
+  if (!reviewStatus.can_review) return null;
+
+  return (
+    <Card padding="md">
+      <h3 className="font-semibold mb-1">Leave a review</h3>
+      <p className="text-small text-grey-mid mb-4">How was the service?</p>
+
+      <div className="space-y-4">
+        <div>
+          <label className="block text-small font-medium mb-2">Rating</label>
+          <StarPicker value={rating} onChange={setRating} size="lg" />
+        </div>
+
+        <div>
+          <label className="block text-small font-medium mb-1.5">Comment (optional)</label>
+          <textarea
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+            rows={3}
+            placeholder="Share your experience..."
+            className="input w-full resize-none"
+            maxLength={1000}
+          />
+        </div>
+
+        <Button
+          loading={submitMutation.isPending}
+          disabled={rating === 0}
+          onClick={() => submitMutation.mutate()}
+        >
+          Submit review
+        </Button>
+      </div>
+    </Card>
+  );
 }
 
 export default function BookingDetailPage() {
@@ -90,7 +169,7 @@ export default function BookingDetailPage() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-10 space-y-6">
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 flex-wrap">
         <Link to="/customer/bookings" className="text-grey-mid hover:text-black text-small">← Bookings</Link>
         <Badge variant={statusVariant(booking.status)}>{booking.status.replace(/_/g, " ")}</Badge>
         {payment && (
@@ -143,7 +222,6 @@ export default function BookingDetailPage() {
         </div>
       </Card>
 
-      {/* Payment CTA */}
       {showPayNow && (
         <div className="bg-orange/5 border border-orange/30 rounded-card p-4 flex items-center justify-between gap-4">
           <div>
@@ -156,7 +234,6 @@ export default function BookingDetailPage() {
         </div>
       )}
 
-      {/* Confirm completion CTA */}
       {showConfirmCompletion && (
         <div className="bg-green-50 border border-green-200 rounded-card p-4 flex items-center justify-between gap-4">
           <div>
@@ -172,7 +249,6 @@ export default function BookingDetailPage() {
         </div>
       )}
 
-      {/* Cancel */}
       {booking.can_cancel && (
         <Button
           variant="outline"
@@ -183,7 +259,9 @@ export default function BookingDetailPage() {
         </Button>
       )}
 
-      {/* Status timeline */}
+      {/* Review form / submitted review */}
+      <ReviewSection bookingId={bookingId} />
+
       {booking.status_logs.length > 0 && (
         <Card padding="md">
           <h3 className="font-semibold mb-3">Status history</h3>
