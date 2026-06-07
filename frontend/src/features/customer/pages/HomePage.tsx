@@ -4,10 +4,10 @@ import { formatNaira } from "@/lib/utils";
 import { Star, Shield, Clock } from "lucide-react";
 
 const SERVICES = [
-  { icon: "🏠", label: "Regular cleaning", from: 4000 },
-  { icon: "🧹", label: "Deep cleaning", from: 7500 },
-  { icon: "🏢", label: "Office cleaning", from: 5500 },
-  { icon: "🔨", label: "Post-construction", from: 10000 },
+  { icon: "🏠", label: "Home cleaning", type: "HOME_CLEANING", from: 4000 },
+  { icon: "🧹", label: "Deep cleaning", type: "DEEP_CLEANING", from: 7500 },
+  { icon: "🏢", label: "Office cleaning", type: "OFFICE_CLEANING", from: 5500 },
+  { icon: "🔨", label: "Post-construction", type: "POST_CONSTRUCTION", from: 10000 },
 ];
 
 const TRUST_POINTS = [
@@ -50,7 +50,7 @@ export default function HomePage() {
             {SERVICES.map((s) => (
               <button
                 key={s.label}
-                onClick={() => navigate(`/search?type=${s.label}`)}
+                onClick={() => navigate(`/search?type=${s.type}`)}
                 className="bg-white rounded-card border border-border p-6 text-left hover:border-orange hover:shadow-sm transition-all"
               >
                 <span className="text-3xl mb-3 block">{s.icon}</span>
