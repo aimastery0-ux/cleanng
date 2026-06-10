@@ -1,8 +1,7 @@
 [build]
   base = "frontend"
   command = "npx vite build"
-  publish = "frontend/dist"
-
+  publish = "dist"
 [build.environment]
   NODE_VERSION = "18"
   NETLIFY_NEXT_PLUGIN_SKIP = "true"
